@@ -14,3 +14,8 @@ def dividir(a, b):
     if b == 0:
         raise ValueError("Não é possível dividir por zero")
     return a / b
+
+
+def potencia(a, b):
+    # BUG proposital: deveria ser a ** b (potência), mas está multiplicando
+    return a * b
