@@ -1,4 +1,6 @@
-from src.calculadora import somar, subtrair, multiplicar, dividir, potencia
+from src.calculadora import (
+    somar, subtrair, multiplicar, dividir, potencia, resto
+)
 import pytest
 
 
@@ -25,3 +27,12 @@ def test_dividir_por_zero():
 
 def test_potencia():
     assert potencia(2, 3) == 8
+
+
+def test_resto():
+    assert resto(10, 3) == 1
+
+
+def test_resto_por_zero():
+    with pytest.raises(ValueError):
+        resto(10, 0)
