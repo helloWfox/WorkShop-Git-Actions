@@ -10,19 +10,25 @@ on:
 
 jobs:
   build-and-test:
-    name: Build e Testes
+    name: Build e Testes (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+
+    # Matrix: roda os testes em várias versões do Python em paralelo
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ '3.10', '3.11', '3.12' ]
 
     steps:
       # Passo 1: baixa o código do repositório para o runner
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      # Passo 2: instala o Python na versão especificada
+      # Passo 2: instala o Python na versão da matrix
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
       # Passo 3: instala as dependências do projeto
@@ -36,9 +42,9 @@ jobs:
         run: |
           flake8 src/ tests/ --max-line-length=100
 
-      # Passo 5: executa os testes automatizados com o PYTHONPATH configurado
-      - name: Rodar testes
+      # Passo 5: executa os testes com relatório de cobertura
+      - name: Rodar testes com cobertura
         env:
           PYTHONPATH: .
         run: |
-          pytest tests/ -v
+          pytest tests/ -v --cov=src --cov-report=term-missing
