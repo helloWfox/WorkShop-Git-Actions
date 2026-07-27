@@ -17,5 +17,4 @@ def dividir(a, b):
 
 
 def potencia(a, b):
-    # BUG proposital: deveria ser a ** b (potência), mas está multiplicando
-    return a * b
+    return a ** b
