@@ -1,4 +1,4 @@
-name: CI/CD - Pipeline de Integracao e Entrega Continua
+name: CI - Pipeline de Integração Contínua
 
 # Gatilhos: quando o workflow deve rodar
 on:
@@ -8,64 +8,43 @@ on:
     branches: [ "main" ]
   workflow_dispatch:  # permite rodar manualmente pela aba Actions
 
-# Permissoes necessarias para o job de CD publicar no GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 jobs:
   build-and-test:
-    name: Build e Testes
+    name: Build e Testes (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
 
+    # Matrix: roda os testes em várias versões do Python em paralelo
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ '3.10', '3.11', '3.12' ]
+
     steps:
-      # Passo 1: baixa o codigo do repositorio para o runner
-      - name: Checkout do codigo
+      # Passo 1: baixa o código do repositório para o runner
+      - name: Checkout do código
         uses: actions/checkout@v4
 
-      # Passo 2: instala o Python
+      # Passo 2: instala o Python na versão da matrix
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
-      # Passo 3: instala as dependencias do projeto
-      - name: Instalar dependencias
+      # Passo 3: instala as dependências do projeto
+      - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest-html
 
-      # Passo 4: verifica qualidade/estilo do codigo
+      # Passo 4: verifica qualidade/estilo do código
       - name: Lint com flake8
-        run: flake8 src/ tests/ --max-line-length=100
+        run: |
+          flake8 src/ tests/ --max-line-length=100
 
-      # Passo 5: executa os testes e gera o relatorio HTML autocontido
-      - name: Executar testes e gerar relatorio HTML
+      # Passo 5: executa os testes com relatório de cobertura
+      - name: Rodar testes com cobertura
         env:
           PYTHONPATH: .
-        run: python -m pytest tests/ -v --html=report/index.html --self-contained-html
-
-      # Passo 6: envia a pasta report como artefato do Pages
-      - name: Enviar relatorio como artefato do Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: report
-
-  deploy:
-    name: Deploy (CD)
-    # so roda se o job de CI terminar com sucesso
-    needs: build-and-test
-    # e so na branch main (em Pull Request este job aparece como "skipped")
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Publicar no GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        run: |
+          pytest tests/ -v --cov=src --cov-report=term-missing
